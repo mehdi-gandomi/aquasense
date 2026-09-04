@@ -1,0 +1,354 @@
+@import 'tailwindcss';
+@import 'leaflet/dist/leaflet.css';
+
+/* ------------------------------------------------------------------ *
+ * AQUASENSE design tokens.
+ * Neo-brutalist SCADA: hard edges, flat offset shadows, zero radius,
+ * high-contrast severity colour, monospace numerics.
+ * ------------------------------------------------------------------ */
+
+@theme {
+  --color-shell-950: #04101b;
+  --color-shell-900: #071522;
+  --color-shell-850: #091c2b;
+  --color-shell-800: #0b2033;
+  --color-shell-700: #123047;
+  --color-shell-600: #1b4462;
+
+  --color-line: #17364e;
+  --color-line-bright: #23557a;
+
+  --color-workspace: #eef4f6;
+  --color-paper: #f7fafb;
+
+  --color-flow: #14afc4;
+  --color-flow-dim: #0d7b8b;
+  --color-flow-bright: #4fd8ea;
+
+  --color-nominal: #42b883;
+  --color-warning: #f2a93b;
+  --color-critical: #e65063;
+  --color-offline: #5b7089;
+
+  --color-sludge: #8a6f4b;
+  --color-biogas: #9b7cd4;
+
+  --color-ink: #071522;
+  --color-muted: #7f9bb3;
+  --color-faint: #4d6b85;
+
+  --font-display: var(--font-space-grotesk), 'Space Grotesk', ui-sans-serif, system-ui,
+    sans-serif;
+  --font-mono: var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, SFMono-Regular,
+    Menlo, monospace;
+
+  --animate-alarm: alarm 1.5s ease-in-out infinite;
+  --animate-scan: scan 5s linear infinite;
+  --animate-ticker: ticker 38s linear infinite;
+  --animate-rise: rise 2.6s ease-out infinite;
+  --animate-sweep: sweep 2.4s ease-in-out infinite;
+}
+
+@keyframes alarm {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes scan {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes ticker {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes rise {
+  0% {
+    transform: translateY(6px) scale(0.6);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-22px) scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes sweep {
+  0%,
+  100% {
+    transform: translateX(-30%);
+  }
+  50% {
+    transform: translateX(130%);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+
+@layer base {
+  * {
+    border-color: var(--color-line);
+  }
+
+  html,
+  body {
+    height: 100%;
+  }
+
+  body {
+    background-color: var(--color-shell-950);
+    color: #d7e6f2;
+    font-family: var(--font-display);
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  html.light {
+    color-scheme: light;
+    --color-shell-950: #d5e0e6;
+    --color-shell-900: #f7fafb;
+    --color-shell-850: #eef4f6;
+    --color-shell-800: #e2ebef;
+    --color-shell-700: #c5d4dc;
+    --color-shell-600: #9eb3c0;
+    --color-line: #8aa3b3;
+    --color-line-bright: #0d7b8b;
+    --color-muted: #3d5870;
+    --color-faint: #5c7588;
+  }
+
+  html.light body {
+    color: #071522;
+    background-color: #d5e0e6;
+  }
+
+  /* StatusBar, spine, deck, admin header stay night SCADA in both themes. */
+  .chrome {
+    --color-shell-950: #04101b;
+    --color-shell-900: #071522;
+    --color-shell-850: #091c2b;
+    --color-shell-800: #0b2033;
+    --color-shell-700: #123047;
+    --color-line: #17364e;
+    --color-line-bright: #23557a;
+    --color-muted: #7f9bb3;
+    --color-faint: #4d6b85;
+    color: #d7e6f2;
+  }
+
+  .chrome .text-white,
+  .chrome .text-slate-100,
+  .chrome .text-slate-200 {
+    color: #f1f7fb;
+  }
+
+  .chrome .text-slate-300,
+  .chrome .text-slate-400 {
+    color: #7f9bb3;
+  }
+
+  /* Every numeric readout is fixed-width so 4Hz socket updates never reflow. */
+  .tnum,
+  [data-numeric] {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-shell-950);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-shell-700);
+    border: 2px solid var(--color-shell-950);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-line-bright);
+  }
+
+  ::selection {
+    background: var(--color-flow);
+    color: var(--color-shell-950);
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Structural primitives
+ * ------------------------------------------------------------------ */
+
+@utility slab {
+  background-color: color-mix(in oklab, var(--color-shell-900) 88%, transparent);
+  border: 2px solid var(--color-line);
+  backdrop-filter: blur(10px);
+}
+
+@utility slab-solid {
+  background-color: var(--color-shell-900);
+  border: 2px solid var(--color-line);
+}
+
+@utility shadow-brut {
+  box-shadow: 4px 4px 0 0 rgb(2 8 15 / 0.75);
+}
+
+html.light .shadow-brut {
+  box-shadow: 4px 4px 0 0 rgb(7 21 34 / 0.12);
+}
+
+html.light .grid-paper {
+  background-image:
+    linear-gradient(to right, rgb(7 21 34 / 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(7 21 34 / 0.06) 1px, transparent 1px);
+}
+
+@utility shadow-brut-sm {
+  box-shadow: 2px 2px 0 0 rgb(2 8 15 / 0.7);
+}
+
+/* Uppercase structural label, the workhorse of the console chrome. */
+@utility label-xs {
+  font-size: 9px;
+  line-height: 1;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--color-faint);
+}
+
+@utility label-sm {
+  font-size: 10px;
+  line-height: 1.1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+/* Blueprint grid used behind the twin and empty workspaces. */
+@utility grid-paper {
+  background-image:
+    linear-gradient(to right, rgb(35 85 122 / 0.16) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(35 85 122 / 0.16) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+@utility grid-paper-fine {
+  background-image:
+    linear-gradient(to right, rgb(35 85 122 / 0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(35 85 122 / 0.1) 1px, transparent 1px);
+  background-size: 12px 12px;
+}
+
+/* Critical states get structure, not just a red tint. */
+@utility hazard-stripe {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgb(230 80 99 / 0.22) 0px,
+    rgb(230 80 99 / 0.22) 7px,
+    transparent 7px,
+    transparent 14px
+  );
+}
+
+@utility hazard-stripe-amber {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgb(242 169 59 / 0.2) 0px,
+    rgb(242 169 59 / 0.2) 7px,
+    transparent 7px,
+    transparent 14px
+  );
+}
+
+@utility scanlines {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgb(255 255 255 / 0.022) 0px,
+    rgb(255 255 255 / 0.022) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+@layer components {
+  .deck-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-shell-700) transparent;
+  }
+
+  /* Focus ring that matches the hard-edged language. */
+  .focus-hard:focus-visible {
+    outline: 2px solid var(--color-flow);
+    outline-offset: 2px;
+  }
+}
+
+/* Unlayered so these beat Tailwind utilities (text-slate-100 on white fields). */
+html.light .text-white,
+html.light .text-slate-100,
+html.light .text-slate-200 {
+  color: #071522;
+}
+
+html.light .text-slate-300,
+html.light .text-slate-400 {
+  color: #3d5870;
+}
+
+html.light input,
+html.light textarea,
+html.light select {
+  color: #071522;
+  background-color: #ffffff;
+  caret-color: #071522;
+}
+
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: #5c7588;
+}
+
+html.light option {
+  color: #071522;
+  background-color: #ffffff;
+}
+
+.chrome {
+  color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

@@ -1,0 +1,149 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import PDFDocument from 'pdfkit';
+import {
+  FACILITIES,
+  computeWqi,
+  getFacility,
+  limitsForFacility,
+  type FacilityId,
+} from '@aquasense/shared';
+import { TelemetryService } from '../telemetry/telemetry.service';
+import { AlertsService } from '../alerts/alerts.service';
+import { PlantService } from '../plant/plant.service';
+import { HistoryService } from '../history/history.service';
+
+export interface ShiftSnapshot {
+  facilityId: FacilityId;
+  facilityName: string;
+  createdAt: string;
+  notes: string;
+  wqi: number | null;
+  alerts: Array<{ code: string; severity: string; message: string; state: string }>;
+  consent: Array<{ label: string; value: number; limit: number; unit: string }>;
+  equipment: Array<{ id: string; label: string; mode: string; running: boolean }>;
+}
+
+@Injectable()
+export class ReportsService {
+  constructor(
+    private readonly telemetry: TelemetryService,
+    private readonly alerts: AlertsService,
+    private readonly plant: PlantService,
+    private readonly history: HistoryService,
+  ) {}
+
+  async create(facilityId: FacilityId, notes: string) {
+    const snapshot = this.snapshot(facilityId, notes);
+    const row = await this.history.saveReport(facilityId, notes, snapshot);
+    const pdf = await this.render(snapshot);
+    return {
+      id: row?.id ?? null,
+      persisted: Boolean(row),
+      snapshot,
+      pdfBase64: pdf.toString('base64'),
+    };
+  }
+
+  async pdf(id: number): Promise<Buffer> {
+    const row = await this.history.getReport(id);
+    if (!row) throw new NotFoundException(`Report ${id} not found`);
+    const snapshot = JSON.parse(row.snapshotJson) as ShiftSnapshot;
+    return this.render(snapshot);
+  }
+
+  snapshot(facilityId: FacilityId, notes: string): ShiftSnapshot {
+    const latest = this.telemetry.latestFor(facilityId);
+    const byId = Object.fromEntries(latest.map((r) => [r.sensorId, r.value]));
+    const facility = getFacility(facilityId);
+
+    const wqi =
+      facilityId === 'northfield-wrrf'
+        ? computeWqi({
+            tss: byId['EFF-TSS-01'] ?? 0,
+            bod: byId['EFF-BOD-01'] ?? 0,
+            nh4: byId['EFF-NH4-01'] ?? 0,
+            turbidity: byId['EFF-TRB-01'] ?? 0,
+            do: byId['EFF-DO-01'] ?? 0,
+          })
+        : null;
+
+    return {
+      facilityId,
+      facilityName: facility.name,
+      createdAt: new Date().toISOString(),
+      notes,
+      wqi,
+      alerts: this.alerts
+        .list(facilityId)
+        .filter((a) => a.state !== 'RESOLVED')
+        .map((a) => ({
+          code: a.code,
+          severity: a.severity,
+          message: a.message,
+          state: a.state,
+        })),
+      consent: limitsForFacility(facilityId).map((l) => ({
+        label: l.label,
+        value: byId[l.sensorId] ?? 0,
+        limit: l.limit,
+        unit: l.unit,
+      })),
+      equipment: this.plant.snapshot(facilityId).equipment.map((e) => ({
+        id: e.id,
+        label: e.label,
+        mode: e.mode,
+        running: e.running,
+      })),
+    };
+  }
+
+  private render(snapshot: ShiftSnapshot): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      const doc = new PDFDocument({ size: 'A4', margin: 48 });
+      const chunks: Buffer[] = [];
+      doc.on('data', (c: Buffer) => chunks.push(c));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
+
+      doc.fillColor('#071522').fontSize(18).text('AQUASENSE SHIFT HANDOVER');
+      doc.moveDown(0.3);
+      doc.fontSize(10).fillColor('#123047').text(snapshot.facilityName);
+      doc.text(snapshot.createdAt);
+      if (snapshot.wqi !== null) doc.text(`Water quality index  ${snapshot.wqi.toFixed(1)}`);
+
+      doc.moveDown();
+      doc.fontSize(12).fillColor('#071522').text('Open incidents');
+      doc.fontSize(9).fillColor('#123047');
+      if (!snapshot.alerts.length) doc.text('None.');
+      for (const alert of snapshot.alerts) {
+        doc.text(`[${alert.severity}] ${alert.code}  ${alert.message}`);
+      }
+
+      doc.moveDown();
+      doc.fontSize(12).fillColor('#071522').text('Consent snapshot');
+      doc.fontSize(9).fillColor('#123047');
+      if (!snapshot.consent.length) doc.text('No discharge consent on this facility.');
+      for (const row of snapshot.consent) {
+        doc.text(`${row.label.padEnd(28)} ${row.value.toFixed(2)} ${row.unit}  limit ${row.limit}`);
+      }
+
+      doc.moveDown();
+      doc.fontSize(12).fillColor('#071522').text('Equipment posture');
+      doc.fontSize(9).fillColor('#123047');
+      for (const item of snapshot.equipment) {
+        doc.text(`${item.id}  ${item.label}  ${item.mode}  ${item.running ? 'RUN' : 'STOP'}`);
+      }
+
+      doc.moveDown();
+      doc.fontSize(12).fillColor('#071522').text('Operator notes');
+      doc.fontSize(9).fillColor('#123047').text(snapshot.notes || '(none)');
+
+      doc.moveDown(2);
+      doc.fontSize(8).fillColor('#5b7089').text(
+        `Generated by AQUASENSE SCADA core · ${FACILITIES.length} facilities`,
+      );
+
+      doc.end();
+    });
+  }
+}

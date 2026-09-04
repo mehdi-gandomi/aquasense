@@ -1,0 +1,22 @@
+{
+  "name": "aquasense",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AQUASENSE Operational Digital Twin - wastewater SCADA console",
+  "scripts": {
+    "dev": "pnpm --filter @aquasense/shared build && pnpm --parallel --filter @aquasense/web --filter @aquasense/api dev",
+    "dev:web": "pnpm --filter @aquasense/shared build && pnpm --filter @aquasense/web dev",
+    "dev:api": "pnpm --filter @aquasense/shared build && pnpm --filter @aquasense/api dev",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean"
+  },
+  "devDependencies": {
+    "turbo": "2.10.12",
+    "typescript": "5.9.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
