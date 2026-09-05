@@ -11,6 +11,7 @@ import { getValue } from '@/lib/channels';
 import { formatValue } from '@/lib/format';
 import { useConsole } from '@/stores/useConsole';
 import { WorkspaceHeader } from '@/components/views/WorkspaceHeader';
+import { ComplianceUtilBars } from '@/components/charts/Charts';
 
 interface Assessed {
   limit: ComplianceLimit;
@@ -157,18 +158,30 @@ export function ComplianceView() {
           </div>
         ) : (
           <div className="mt-3 grid gap-3 xl:grid-cols-[400px_1fr]">
-            <div className="slab flex flex-col items-center p-4 shadow-brut">
-              <div className="label-xs mb-3 self-start">Consent Utilisation Rosette</div>
-              <Rosette items={items} />
-              <div className="mt-3 flex flex-wrap justify-center gap-3 border-t-2 border-line pt-3">
-                {(['nominal', 'warning', 'critical'] as const).map((s) => (
-                  <span key={s} className="flex items-center gap-1.5">
-                    <span className="size-2" style={{ backgroundColor: SEVERITY_COLOR[s] }} />
-                    <span className="label-xs">
-                      {s === 'nominal' ? 'Within' : s === 'warning' ? 'Approaching' : 'Breach'}
+            <div className="flex flex-col gap-3">
+              <div className="slab flex flex-col items-center p-4 shadow-brut">
+                <div className="label-xs mb-3 self-start">Consent Utilisation Rosette</div>
+                <Rosette items={items} />
+                <div className="mt-3 flex flex-wrap justify-center gap-3 border-t-2 border-line pt-3">
+                  {(['nominal', 'warning', 'critical'] as const).map((s) => (
+                    <span key={s} className="flex items-center gap-1.5">
+                      <span className="size-2" style={{ backgroundColor: SEVERITY_COLOR[s] }} />
+                      <span className="label-xs">
+                        {s === 'nominal' ? 'Within' : s === 'warning' ? 'Approaching' : 'Breach'}
+                      </span>
                     </span>
-                  </span>
-                ))}
+                  ))}
+                </div>
+              </div>
+              <div className="slab p-3 shadow-brut">
+                <ComplianceUtilBars
+                  items={items.map((i) => ({
+                    label: i.limit.label,
+                    utilisation: i.utilisation,
+                    state: i.state,
+                  }))}
+                  height={Math.max(180, items.length * 36)}
+                />
               </div>
             </div>
 

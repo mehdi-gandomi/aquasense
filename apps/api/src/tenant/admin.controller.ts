@@ -9,7 +9,15 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { IsArray, IsIn, IsNumber, IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  IsIn,
+  IsNumber,
+  IsOptional,
+  IsString,
+  MinLength,
+  IsArray,
+  ValidateIf,
+} from 'class-validator';
 import type { FacilityKind } from '@aquasense/shared';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -102,6 +110,115 @@ class UserBody {
   buildingIds?: string[];
 }
 
+class CreatePlantSensorBody {
+  @IsIn(['catalogue', 'custom'])
+  mode: 'catalogue' | 'custom';
+
+  @ValidateIf((o: CreatePlantSensorBody) => o.mode === 'catalogue')
+  @IsString()
+  templateSensorId?: string;
+
+  @ValidateIf((o: CreatePlantSensorBody) => o.mode === 'custom')
+  @IsString()
+  label?: string;
+
+  @ValidateIf((o: CreatePlantSensorBody) => o.mode === 'custom')
+  @IsString()
+  parameter?: string;
+
+  @ValidateIf((o: CreatePlantSensorBody) => o.mode === 'custom')
+  @IsString()
+  unit?: string;
+
+  @ValidateIf((o: CreatePlantSensorBody) => o.mode === 'custom')
+  @IsNumber()
+  min?: number;
+
+  @ValidateIf((o: CreatePlantSensorBody) => o.mode === 'custom')
+  @IsNumber()
+  max?: number;
+
+  @IsOptional()
+  @IsNumber()
+  decimals?: number;
+
+  @IsOptional()
+  @IsNumber()
+  warnLow?: number;
+
+  @IsOptional()
+  @IsNumber()
+  warnHigh?: number;
+
+  @IsOptional()
+  @IsNumber()
+  critLow?: number;
+
+  @IsOptional()
+  @IsNumber()
+  critHigh?: number;
+
+  @IsOptional()
+  @IsNumber()
+  target?: number;
+
+  @IsNumber()
+  lat: number;
+
+  @IsNumber()
+  lng: number;
+}
+
+class PatchPlantSensorBody {
+  @IsOptional()
+  @IsString()
+  label?: string;
+
+  @IsOptional()
+  @IsNumber()
+  lat?: number;
+
+  @IsOptional()
+  @IsNumber()
+  lng?: number;
+
+  @IsOptional()
+  @IsNumber()
+  warnLow?: number;
+
+  @IsOptional()
+  @IsNumber()
+  warnHigh?: number;
+
+  @IsOptional()
+  @IsNumber()
+  critLow?: number;
+
+  @IsOptional()
+  @IsNumber()
+  critHigh?: number;
+
+  @IsOptional()
+  @IsNumber()
+  target?: number;
+
+  @IsOptional()
+  @IsNumber()
+  min?: number;
+
+  @IsOptional()
+  @IsNumber()
+  max?: number;
+
+  @IsOptional()
+  @IsString()
+  unit?: string;
+
+  @IsOptional()
+  @IsString()
+  parameter?: string;
+}
+
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN')
@@ -131,12 +248,14 @@ export class AdminController {
             : readings.length
               ? 'nominal'
               : 'offline';
+      const mapSensors = this.tenant.listMapSensors(plant.id);
       return {
         ...plant,
         warning,
         critical,
         instruments: readings.length,
         severity,
+        mapSensors,
       };
     });
   }
@@ -198,6 +317,70 @@ export class AdminController {
   @Delete(['plants/:id', 'buildings/:id'])
   deletePlant(@Param('id') id: string) {
     return this.tenant.deletePlant(id);
+  }
+
+  @Get('plants/:id/sensors')
+  plantSensors(@Param('id') id: string) {
+    const sensors = this.tenant.listPlantSensors(id);
+    const readings = this.telemetry.latestFor(id);
+    const byId = new Map(readings.map((r) => [r.sensorId, r]));
+    return sensors.map((s) => {
+      const reading = byId.get(s.id);
+      return {
+        ...s,
+        value: reading?.value,
+        severity: reading?.severity ?? 'offline',
+        recordedAt: reading?.recordedAt,
+      };
+    });
+  }
+
+  @Get('plants/:id/catalogue')
+  plantCatalogue(@Param('id') id: string) {
+    return this.tenant.catalogueForPlant(id);
+  }
+
+  @Post('plants/:id/sensors')
+  createPlantSensor(@Param('id') id: string, @Body() body: CreatePlantSensorBody) {
+    if (body.mode === 'catalogue') {
+      return this.tenant.createPlantSensor(id, {
+        mode: 'catalogue',
+        templateSensorId: body.templateSensorId!,
+        lat: body.lat,
+        lng: body.lng,
+        label: body.label,
+      });
+    }
+    return this.tenant.createPlantSensor(id, {
+      mode: 'custom',
+      label: body.label!,
+      parameter: body.parameter!,
+      unit: body.unit!,
+      min: body.min!,
+      max: body.max!,
+      decimals: body.decimals,
+      warnLow: body.warnLow,
+      warnHigh: body.warnHigh,
+      critLow: body.critLow,
+      critHigh: body.critHigh,
+      target: body.target,
+      lat: body.lat,
+      lng: body.lng,
+    });
+  }
+
+  @Patch('plants/:id/sensors/:sensorId')
+  updatePlantSensor(
+    @Param('id') id: string,
+    @Param('sensorId') sensorId: string,
+    @Body() body: PatchPlantSensorBody,
+  ) {
+    return this.tenant.updatePlantSensor(id, sensorId, body);
+  }
+
+  @Delete('plants/:id/sensors/:sensorId')
+  deletePlantSensor(@Param('id') id: string, @Param('sensorId') sensorId: string) {
+    return this.tenant.deletePlantSensor(id, sensorId);
   }
 
   @Get('users')

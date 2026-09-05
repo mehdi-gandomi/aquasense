@@ -101,6 +101,11 @@ export interface SensorDef {
   seed: number;
   /** Show this reading as a tag pinned to the twin. */
   pinned?: boolean;
+  /** Geographic placement on the catchment map (admin-placed instruments). */
+  lat?: number;
+  lng?: number;
+  /** Origin of the def: seed template, catalogue clone on map, or freeform custom. */
+  source?: 'template' | 'catalogue' | 'custom';
 }
 
 export interface SensorReading {

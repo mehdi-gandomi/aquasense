@@ -10,15 +10,22 @@ import {
   type Facility,
 } from '@aquasense/shared';
 import { api } from '@/lib/api';
-import { getValue } from '@/lib/channels';
+import { getSeverity, getValue } from '@/lib/channels';
 import { facilityCounts } from '@/lib/health';
 import { TelemetryProvider } from '@/components/providers/TelemetryProvider';
 import { SensorCard } from '@/components/ui/SensorCard';
-import { HardButton, StatusChip } from '@/components/ui/primitives';
-import { WorkspaceHeader } from '@/components/views/WorkspaceHeader';
+import { StatusChip } from '@/components/ui/primitives';
 import { EventTape } from '@/components/shell/EventTape';
 import { useAuth } from '@/stores/useAuth';
 import { useConsole } from '@/stores/useConsole';
+import {
+  AdminButton,
+  AdminCard,
+  AdminCardTitle,
+  AdminPageHeader,
+  AdminStat,
+} from '@/components/admin/AdminUi';
+import { SensorTrendPanel } from '@/components/charts/SensorTrendPanel';
 
 const PlantMap = dynamic(
   () => import('@/components/admin/PlantMap').then((m) => m.PlantMap),
@@ -95,47 +102,60 @@ function DossierInner({ id }: { id: string }) {
 
   if (!facility) {
     return (
-      <div className="p-4">
-        <WorkspaceHeader title="Unknown plant" subtitle={id} />
+      <div>
+        <AdminPageHeader title="Unknown plant" subtitle={id} />
       </div>
     );
   }
 
   return (
-    <div className="p-4">
-      <WorkspaceHeader
+    <div>
+      <AdminPageHeader
         title={facility.shortName}
         subtitle={`${facility.code} · ${facility.kind} · ${facility.address || 'No address'}`}
       >
         <Link href="/admin">
-          <HardButton>Fleet</HardButton>
+          <AdminButton>Fleet</AdminButton>
         </Link>
         <Link href="/admin/plants">
-          <HardButton>Edit sites</HardButton>
+          <AdminButton>Edit sites</AdminButton>
         </Link>
         <Link href={`/?facility=${encodeURIComponent(facility.id)}`}>
-          <HardButton tone="flow">Open twin</HardButton>
+          <AdminButton tone="primary">Open twin</AdminButton>
         </Link>
-      </WorkspaceHeader>
+      </AdminPageHeader>
 
-      <div className="mt-3 grid gap-3 md:grid-cols-4">
-        <Kpi label="Instruments" value={String(sensors.length)} note={`${counts.nominal} nominal`} />
-        <Kpi label="Critical" value={String(counts.critical)} note={`${counts.warning} warnings`} />
-        <Kpi
+      <div className="mb-5 grid gap-3 md:grid-cols-4">
+        <AdminStat label="Instruments" value={String(sensors.length)} hint={`${counts.nominal} nominal`} tone="cyan" />
+        <AdminStat label="Critical" value={String(counts.critical)} hint={`${counts.warning} warnings`} tone="rose" />
+        <AdminStat
           label={wqi != null ? 'WQI' : 'Design flow'}
           value={wqi != null ? wqi.toFixed(1) : String(facility.designFlow)}
-          note={wqi != null ? 'Consent index' : 'm3/h'}
+          hint={wqi != null ? 'Consent index' : 'm³/h'}
+          tone="mint"
         />
-        <Kpi label="Client" value={clientName} note={`${operators.length} operators assigned`} />
+        <AdminStat label="Client" value={clientName} hint={`${operators.length} operators`} tone="amber" />
       </div>
 
-      <div className="mt-3 grid gap-3 xl:grid-cols-[1fr_320px]">
+      {tss && (
+        <AdminCard className="mb-5">
+          <AdminCardTitle>Effluent trend · {tss.label}</AdminCardTitle>
+          <SensorTrendPanel
+            soft
+            sensor={tss}
+            facilityId={id}
+            severity={getSeverity(tss.id)}
+          />
+        </AdminCard>
+      )}
+
+      <div className="grid gap-4 xl:grid-cols-[1fr_320px]">
         <div>
-          <div className="label-xs mb-2">Live instruments</div>
+          <div className="mb-2 text-[13px] font-semibold text-slate-600">Live instruments</div>
           {featured.length === 0 ? (
-            <div className="slab p-6 shadow-brut">
-              <p className="text-[12px] text-slate-400">No twin template on this site.</p>
-            </div>
+            <AdminCard>
+              <p className="text-[13px] text-slate-500">No twin template on this site.</p>
+            </AdminCard>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
               {featured.map((sensor) => (
@@ -145,32 +165,36 @@ function DossierInner({ id }: { id: string }) {
           )}
         </div>
 
-        <div className="flex flex-col gap-3">
-          <div className="slab overflow-hidden shadow-brut">
-            <div className="border-b-2 border-line px-3 py-2 label-xs">Location</div>
+        <div className="flex flex-col gap-4">
+          <AdminCard padded={false}>
+            <div className="border-b border-slate-100 px-4 py-3">
+              <AdminCardTitle>Location</AdminCardTitle>
+            </div>
             <PlantMap lat={facility.lat} lng={facility.lng} onPick={() => undefined} />
-            <div className="px-3 py-2 label-xs tnum">
+            <div className="px-4 py-2 text-[12px] text-slate-500">
               {facility.lat?.toFixed(4) ?? '—'}, {facility.lng?.toFixed(4) ?? '—'}
             </div>
-          </div>
+          </AdminCard>
 
-          <div className="slab shadow-brut">
-            <div className="border-b-2 border-line px-3 py-2 label-xs">Assigned operators</div>
+          <AdminCard padded={false}>
+            <div className="border-b border-slate-100 px-4 py-3">
+              <AdminCardTitle>Assigned operators</AdminCardTitle>
+            </div>
             {operators.length === 0 ? (
-              <p className="px-3 py-3 text-[12px] text-slate-400">No client users assigned.</p>
+              <p className="px-4 py-3 text-[13px] text-slate-500">No client users assigned.</p>
             ) : (
               operators.map((op) => (
-                <div key={op.id} className="border-b border-line/50 px-3 py-2">
-                  <div className="text-[12px] font-semibold uppercase tracking-[0.08em]">{op.name}</div>
-                  <div className="label-xs mt-0.5 tnum">{op.email}</div>
+                <div key={op.id} className="border-b border-slate-100 px-4 py-3 last:border-b-0">
+                  <div className="text-[13px] font-semibold text-slate-800">{op.name}</div>
+                  <div className="mt-0.5 text-[12px] text-slate-500">{op.email}</div>
                 </div>
               ))
             )}
-          </div>
+          </AdminCard>
 
-          <div className="slab shadow-brut">
-            <div className="flex items-center gap-2 border-b-2 border-line px-3 py-2">
-              <span className="label-xs">Active alerts</span>
+          <AdminCard padded={false}>
+            <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3">
+              <AdminCardTitle>Active alerts</AdminCardTitle>
               {active[0] && (
                 <span className="ml-auto">
                   <StatusChip severity={active[0].severity} />
@@ -178,33 +202,25 @@ function DossierInner({ id }: { id: string }) {
               )}
             </div>
             {active.length === 0 ? (
-              <p className="px-3 py-3 text-[12px] text-nominal">All stages nominal</p>
+              <p className="px-4 py-3 text-[13px] text-emerald-600">All stages nominal</p>
             ) : (
               active.slice(0, 6).map((a) => (
-                <div key={a.id} className="border-b border-line/50 px-3 py-2">
-                  <div className="label-xs tnum">{a.code}</div>
-                  <p className="mt-1 text-[11px] text-slate-400">{a.message}</p>
+                <div key={a.id} className="border-b border-slate-100 px-4 py-3 last:border-b-0">
+                  <div className="text-[12px] font-semibold text-slate-700">{a.code}</div>
+                  <p className="mt-1 text-[12px] text-slate-500">{a.message}</p>
                 </div>
               ))
             )}
-          </div>
+          </AdminCard>
 
-          <div className="slab shadow-brut">
-            <div className="border-b-2 border-line px-3 py-2 label-xs">Event stream</div>
+          <AdminCard padded={false}>
+            <div className="border-b border-slate-100 px-4 py-3">
+              <AdminCardTitle>Event stream</AdminCardTitle>
+            </div>
             <EventTape limit={8} dense className="max-h-[200px] px-1" />
-          </div>
+          </AdminCard>
         </div>
       </div>
-    </div>
-  );
-}
-
-function Kpi({ label, value, note }: { label: string; value: string; note: string }) {
-  return (
-    <div className="slab px-3 py-2 shadow-brut">
-      <div className="label-xs">{label}</div>
-      <div className="mt-1 truncate text-[22px] font-semibold leading-none tnum">{value}</div>
-      <div className="label-xs mt-1.5 normal-case tracking-normal">{note}</div>
     </div>
   );
 }

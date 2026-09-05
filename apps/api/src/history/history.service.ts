@@ -10,8 +10,15 @@ import { ClientEntity } from '../tenant/entities/client.entity';
 import { BuildingEntity } from '../tenant/entities/building.entity';
 import { UserEntity } from '../tenant/entities/user.entity';
 import { UserBuildingEntity } from '../tenant/entities/user-building.entity';
+import { PlantSensorEntity } from '../tenant/entities/plant-sensor.entity';
 
-export const TENANT_ENTITIES = [ClientEntity, BuildingEntity, UserEntity, UserBuildingEntity];
+export const TENANT_ENTITIES = [
+  ClientEntity,
+  BuildingEntity,
+  UserEntity,
+  UserBuildingEntity,
+  PlantSensorEntity,
+];
 
 export interface TrendPoint {
   t: number;

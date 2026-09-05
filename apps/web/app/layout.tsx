@@ -36,13 +36,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="en"
       className={`${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
+      data-style="brutal"
+      data-admin-look="soft"
       suppressHydrationWarning
     >
       <body className="antialiased">
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "(function(){try{var t=localStorage.getItem('aquasense.theme');if(t!=='light')t='dark';document.documentElement.classList.remove('light','dark');document.documentElement.classList.add(t);}catch(e){document.documentElement.classList.add('dark');}})();",
+              "(function(){try{var d=document.documentElement;var t=localStorage.getItem('aquasense.theme');if(t!=='light')t='dark';d.classList.remove('light','dark');d.classList.add(t);var s=localStorage.getItem('aquasense.style');if(s!=='hydraulic'&&s!=='atlas')s='brutal';d.setAttribute('data-style',s);var a=localStorage.getItem('aquasense.adminLook');if(a!=='brutal')a='soft';d.setAttribute('data-admin-look',a);}catch(e){document.documentElement.classList.add('dark');document.documentElement.setAttribute('data-style','brutal');document.documentElement.setAttribute('data-admin-look','soft');}})();",
           }}
         />
         <ThemeProvider>

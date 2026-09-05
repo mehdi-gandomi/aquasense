@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { AuthGate } from '@/components/providers/AuthGate';
 import { TelemetryProvider } from '@/components/providers/TelemetryProvider';
 import { PlantSwitcher } from '@/components/shell/PlantSwitcher';
-import { ThemeToggle } from '@/components/providers/ThemeProvider';
+import { StyleSwitch, ThemeToggle } from '@/components/providers/ThemeProvider';
 import { useAuth } from '@/stores/useAuth';
 import { HardButton } from '@/components/ui/primitives';
 
@@ -22,6 +22,7 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
             <span className="label-xs hidden sm:inline">Assistant</span>
             <div className="ml-auto flex items-center gap-2">
               <PlantSwitcher compact />
+              <StyleSwitch compact />
               <ThemeToggle compact />
               <Link href="/" className="label-xs text-flow">
                 Open twin

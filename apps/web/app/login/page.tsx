@@ -4,7 +4,7 @@ import { FormEvent, Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/stores/useAuth';
 import { HardButton } from '@/components/ui/primitives';
-import { ThemeToggle } from '@/components/providers/ThemeProvider';
+import { StyleSwitch, ThemeToggle } from '@/components/providers/ThemeProvider';
 
 function LoginForm() {
   const router = useRouter();
@@ -47,7 +47,10 @@ function LoginForm() {
             <div className="text-sm font-bold uppercase tracking-[0.22em] text-ink">Aquasense</div>
             <p className="label-xs mt-1.5 normal-case tracking-normal">Sign in to the operator console</p>
           </div>
-          <ThemeToggle compact />
+          <div className="flex items-center gap-2">
+            <StyleSwitch compact />
+            <ThemeToggle compact />
+          </div>
         </div>
         <div className="flex flex-col gap-3 p-5">
           <label className="block">

@@ -10,7 +10,7 @@ import { formatClock, formatDate } from '@/lib/format';
 import { useConsole } from '@/stores/useConsole';
 import { useAuth } from '@/stores/useAuth';
 import { HardButton } from '@/components/ui/primitives';
-import { ThemeToggle, ViewModeSwitch } from '@/components/providers/ThemeProvider';
+import { StyleSwitch, ThemeToggle, ViewModeSwitch } from '@/components/providers/ThemeProvider';
 import { PlantSwitcher } from '@/components/shell/PlantSwitcher';
 
 function StreamBadge() {
@@ -155,6 +155,7 @@ export function StatusBar() {
 
         <StreamBadge />
         <ViewModeSwitch />
+        <StyleSwitch compact />
         <PlantSwitcher />
         {user?.role === 'ADMIN' && (
           <Link href="/admin" className="label-xs text-flow hidden lg:inline">

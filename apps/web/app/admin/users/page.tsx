@@ -2,8 +2,15 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { HardButton } from '@/components/ui/primitives';
-import { WorkspaceHeader } from '@/components/views/WorkspaceHeader';
+import {
+  AdminButton,
+  AdminCard,
+  AdminCardTitle,
+  AdminField,
+  AdminInput,
+  AdminPageHeader,
+  AdminSelect,
+} from '@/components/admin/AdminUi';
 
 interface ClientRow {
   id: string;
@@ -107,98 +114,101 @@ export default function UsersPage() {
   };
 
   return (
-    <div className="p-4">
-      <WorkspaceHeader title="User management" subtitle="Admins see every plant. Client users only see assigned plants." />
-      {error && <p className="mt-3 text-[12px] text-critical">{error}</p>}
+    <div>
+      <AdminPageHeader
+        title="Users"
+        subtitle="Admins see every plant. Client users only see assigned plants."
+      />
+      {error && <p className="mb-4 text-[13px] text-rose-600">{error}</p>}
 
-      <div className="mt-3 grid gap-3 xl:grid-cols-[380px_1fr]">
-        <form onSubmit={(e) => void submit(e)} className="slab p-3 shadow-brut">
-          <div className="label-xs mb-3">{editingId ? 'Edit user' : 'New user'}</div>
-          <label className="mb-2 block">
-            <span className="label-xs">Name</span>
-            <input
-              required
-              value={form.name}
-              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              className="mt-1 w-full border-2 border-line bg-shell-850 px-2 py-1.5 text-[12px]"
-            />
-          </label>
-          <label className="mb-2 block">
-            <span className="label-xs">Email</span>
-            <input
-              required
-              type="email"
-              value={form.email}
-              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-              className="mt-1 w-full border-2 border-line bg-shell-850 px-2 py-1.5 text-[12px]"
-            />
-          </label>
-          <label className="mb-2 block">
-            <span className="label-xs">Password</span>
-            <input
-              required={!editingId}
-              value={form.password}
-              onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-              placeholder={editingId ? 'Leave blank to keep' : undefined}
-              className="mt-1 w-full border-2 border-line bg-shell-850 px-2 py-1.5 text-[12px]"
-            />
-          </label>
-          <label className="mb-2 block">
-            <span className="label-xs">Role</span>
-            <select
-              value={form.role}
-              onChange={(e) => setForm((f) => ({ ...f, role: e.target.value as 'ADMIN' | 'CLIENT' }))}
-              className="mt-1 w-full border-2 border-line bg-shell-850 px-2 py-1.5 text-[12px]"
-            >
-              <option value="CLIENT">Client user</option>
-              <option value="ADMIN">Admin</option>
-            </select>
-          </label>
-          {form.role === 'CLIENT' && (
-            <>
-              <label className="mb-2 block">
-                <span className="label-xs">Client</span>
-                <select
-                  value={form.clientId}
-                  onChange={(e) => setForm((f) => ({ ...f, clientId: e.target.value }))}
-                  className="mt-1 w-full border-2 border-line bg-shell-850 px-2 py-1.5 text-[12px]"
-                >
-                  {clients.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="mb-3">
-                <div className="label-xs mb-1">Assigned plants</div>
-                <div className="flex max-h-40 flex-col gap-1 overflow-y-auto border-2 border-line p-2">
-                  {plants.map((plant) => (
-                    <label key={plant.id} className="flex items-center gap-2 text-[12px]">
-                      <input
-                        type="checkbox"
-                        checked={form.plantIds.includes(plant.id)}
-                        onChange={() => togglePlant(plant.id)}
-                      />
-                      {plant.shortName}
-                    </label>
-                  ))}
+      <div className="grid gap-4 xl:grid-cols-[380px_1fr]">
+        <AdminCard>
+          <AdminCardTitle>{editingId ? 'Edit user' : 'New user'}</AdminCardTitle>
+          <form onSubmit={(e) => void submit(e)}>
+            <AdminField label="Name">
+              <AdminInput
+                required
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              />
+            </AdminField>
+            <AdminField label="Email">
+              <AdminInput
+                required
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+              />
+            </AdminField>
+            <AdminField label="Password">
+              <AdminInput
+                required={!editingId}
+                value={form.password}
+                onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                placeholder={editingId ? 'Leave blank to keep' : undefined}
+              />
+            </AdminField>
+            <AdminField label="Role">
+              <AdminSelect
+                value={form.role}
+                onChange={(e) => setForm((f) => ({ ...f, role: e.target.value as 'ADMIN' | 'CLIENT' }))}
+              >
+                <option value="CLIENT">Client user</option>
+                <option value="ADMIN">Admin</option>
+              </AdminSelect>
+            </AdminField>
+            {form.role === 'CLIENT' && (
+              <>
+                <AdminField label="Client">
+                  <AdminSelect
+                    value={form.clientId}
+                    onChange={(e) => setForm((f) => ({ ...f, clientId: e.target.value }))}
+                  >
+                    {clients.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </AdminSelect>
+                </AdminField>
+                <div className="mb-3">
+                  <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                    Assigned plants
+                  </div>
+                  <div className="flex max-h-40 flex-col gap-1 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-2">
+                    {plants.map((plant) => (
+                      <label key={plant.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-[13px] text-slate-700 hover:bg-white">
+                        <input
+                          type="checkbox"
+                          checked={form.plantIds.includes(plant.id)}
+                          onChange={() => togglePlant(plant.id)}
+                          className="accent-cyan-600"
+                        />
+                        {plant.shortName}
+                      </label>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </>
-          )}
-          <div className="flex gap-2">
-            <HardButton type="submit" tone="flow">
-              {editingId ? 'Save user' : 'Create user'}
-            </HardButton>
-            {editingId && <HardButton onClick={() => reset()}>Cancel</HardButton>}
-          </div>
-        </form>
+              </>
+            )}
+            <div className="flex gap-2">
+              <AdminButton type="submit" tone="primary">
+                {editingId ? 'Save user' : 'Create user'}
+              </AdminButton>
+              {editingId && <AdminButton onClick={() => reset()}>Cancel</AdminButton>}
+            </div>
+          </form>
+        </AdminCard>
 
-        <div className="slab shadow-brut">
-          <div className="border-b-2 border-line px-3 py-2 label-xs">Accounts</div>
+        <AdminCard padded={false}>
+          <div className="border-b border-slate-100 px-4 py-3">
+            <AdminCardTitle>Accounts</AdminCardTitle>
+          </div>
           {rows.map((row) => (
-            <div key={row.id} className="flex items-center gap-3 border-b border-line/50 px-3 py-2.5">
+            <div
+              key={row.id}
+              className="flex items-center gap-3 border-b border-slate-100 px-4 py-3 last:border-b-0"
+            >
               <button
                 type="button"
                 className="min-w-0 flex-1 text-left"
@@ -214,14 +224,25 @@ export default function UsersPage() {
                   });
                 }}
               >
-                <div className="text-[12px] font-semibold uppercase tracking-[0.08em]">{row.name}</div>
-                <div className="label-xs mt-0.5 tnum">
-                  {row.email} · {row.role}
+                <div className="flex items-center gap-2">
+                  <div className="text-[13px] font-semibold text-slate-800">{row.name}</div>
+                  <span
+                    className={
+                      row.role === 'ADMIN'
+                        ? 'rounded-full bg-cyan-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-cyan-700'
+                        : 'rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700'
+                    }
+                  >
+                    {row.role}
+                  </span>
+                </div>
+                <div className="mt-0.5 text-[12px] text-slate-500">
+                  {row.email}
                   {row.role === 'CLIENT' ? ` · ${row.plantIds.length} plants` : ' · all plants'}
                 </div>
               </button>
-              <HardButton
-                tone="critical"
+              <AdminButton
+                tone="danger"
                 onClick={() =>
                   void api(`/admin/users/${row.id}`, { method: 'DELETE' })
                     .then(() => {
@@ -232,10 +253,10 @@ export default function UsersPage() {
                 }
               >
                 Remove
-              </HardButton>
+              </AdminButton>
             </div>
           ))}
-        </div>
+        </AdminCard>
       </div>
     </div>
   );

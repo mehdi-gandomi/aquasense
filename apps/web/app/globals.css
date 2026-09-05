@@ -3,8 +3,8 @@
 
 /* ------------------------------------------------------------------ *
  * AQUASENSE design tokens.
- * Neo-brutalist SCADA: hard edges, flat offset shadows, zero radius,
- * high-contrast severity colour, monospace numerics.
+ * Styles: brutal (default) | hydraulic | atlas via html[data-style].
+ * Day/Night stays independent (html.light / html.dark).
  * ------------------------------------------------------------------ */
 
 @theme {
@@ -101,6 +101,92 @@
   }
 }
 
+/* ------------------------------------------------------------------ *
+ * Style geometry tokens (brutal default)
+ * ------------------------------------------------------------------ */
+
+:root,
+html[data-style='brutal'] {
+  --ui-radius: 0px;
+  --ui-border: 2px;
+  --ui-shadow: 4px 4px 0 0 rgb(2 8 15 / 0.75);
+  --ui-shadow-sm: 2px 2px 0 0 rgb(2 8 15 / 0.7);
+  --ui-panel-blur: 10px;
+  --ui-grid-size: 48px;
+  --ui-grid-fine: 12px;
+  --ui-grid-alpha: 0.16;
+  --ui-grid-fine-alpha: 0.1;
+}
+
+html[data-style='hydraulic'] {
+  --ui-radius: 12px;
+  --ui-border: 1px;
+  --ui-shadow: 0 10px 28px rgb(4 20 36 / 0.35);
+  --ui-shadow-sm: 0 4px 14px rgb(4 20 36 / 0.28);
+  --ui-panel-blur: 14px;
+  --ui-grid-size: 56px;
+  --ui-grid-fine: 14px;
+  --ui-grid-alpha: 0.12;
+  --ui-grid-fine-alpha: 0.08;
+}
+
+html[data-style='atlas'] {
+  --ui-radius: 6px;
+  --ui-border: 1px;
+  --ui-shadow: 0 1px 0 rgb(2 8 15 / 0.35), 0 8px 20px rgb(2 8 15 / 0.18);
+  --ui-shadow-sm: 0 1px 0 rgb(2 8 15 / 0.28);
+  --ui-panel-blur: 6px;
+  --ui-grid-size: 32px;
+  --ui-grid-fine: 8px;
+  --ui-grid-alpha: 0.14;
+  --ui-grid-fine-alpha: 0.09;
+}
+
+html.light[data-style='brutal'] {
+  --ui-shadow: 4px 4px 0 0 rgb(7 21 34 / 0.12);
+  --ui-shadow-sm: 2px 2px 0 0 rgb(7 21 34 / 0.1);
+}
+
+html.light[data-style='hydraulic'] {
+  --ui-shadow: 0 10px 28px rgb(7 21 34 / 0.1);
+  --ui-shadow-sm: 0 4px 14px rgb(7 21 34 / 0.08);
+}
+
+html.light[data-style='atlas'] {
+  --ui-shadow: 0 1px 0 rgb(7 21 34 / 0.08), 0 8px 18px rgb(7 21 34 / 0.06);
+  --ui-shadow-sm: 0 1px 0 rgb(7 21 34 / 0.06);
+}
+
+/* Soften widespread Tailwind border-2 without editing every component. */
+html[data-style='hydraulic'] .border-2,
+html[data-style='atlas'] .border-2 {
+  border-width: 1px;
+}
+
+html[data-style='hydraulic'] .border,
+html[data-style='atlas'] .border {
+  border-width: 1px;
+}
+
+/* Soften hard corners on common bordered surfaces. */
+html[data-style='hydraulic'] .border-2,
+html[data-style='hydraulic'] .border,
+html[data-style='hydraulic'] .slab,
+html[data-style='hydraulic'] .slab-solid,
+html[data-style='atlas'] .border-2,
+html[data-style='atlas'] .border,
+html[data-style='atlas'] .slab,
+html[data-style='atlas'] .slab-solid {
+  border-radius: var(--ui-radius);
+}
+
+html[data-style='hydraulic'] .shadow-brut,
+html[data-style='hydraulic'] .shadow-brut-sm,
+html[data-style='atlas'] .shadow-brut,
+html[data-style='atlas'] .shadow-brut-sm {
+  border-radius: var(--ui-radius);
+}
+
 /* ------------------------------------------------------------------ */
 
 @layer base {
@@ -121,6 +207,22 @@
     overscroll-behavior: none;
   }
 
+  html[data-style='hydraulic'] body {
+    background-image:
+      radial-gradient(ellipse 90% 55% at 12% -10%, rgb(20 175 196 / 0.14), transparent 55%),
+      radial-gradient(ellipse 70% 45% at 88% 110%, rgb(13 123 139 / 0.12), transparent 50%);
+    background-attachment: fixed;
+  }
+
+  html[data-style='atlas'] body {
+    background-image:
+      linear-gradient(180deg, rgb(8 24 38 / 0.55), transparent 40%),
+      linear-gradient(to right, rgb(35 85 122 / 0.07) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(35 85 122 / 0.07) 1px, transparent 1px);
+    background-size: auto, 32px 32px, 32px 32px;
+    background-attachment: fixed;
+  }
+
   html.dark {
     color-scheme: dark;
   }
@@ -139,9 +241,38 @@
     --color-faint: #5c7588;
   }
 
+  html.light[data-style='hydraulic'] {
+    --color-shell-950: #cfdce4;
+    --color-shell-900: #f4f9fb;
+    --color-shell-850: #e8f2f6;
+  }
+
+  html.light[data-style='atlas'] {
+    --color-shell-950: #d2dbe2;
+    --color-shell-900: #f6f8fa;
+    --color-shell-850: #eef1f4;
+    --color-line: #95a8b6;
+  }
+
   html.light body {
     color: #071522;
     background-color: #d5e0e6;
+  }
+
+  html.light[data-style='hydraulic'] body {
+    background-color: #cfdce4;
+    background-image:
+      radial-gradient(ellipse 90% 55% at 12% -10%, rgb(20 175 196 / 0.16), transparent 55%),
+      radial-gradient(ellipse 70% 45% at 88% 110%, rgb(13 123 139 / 0.1), transparent 50%);
+  }
+
+  html.light[data-style='atlas'] body {
+    background-color: #d2dbe2;
+    background-image:
+      linear-gradient(180deg, rgb(255 255 255 / 0.45), transparent 36%),
+      linear-gradient(to right, rgb(7 21 34 / 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(7 21 34 / 0.05) 1px, transparent 1px);
+    background-size: auto, 32px 32px, 32px 32px;
   }
 
   /* StatusBar, spine, deck, admin header stay night SCADA in both themes. */
@@ -187,6 +318,7 @@
   ::-webkit-scrollbar-thumb {
     background: var(--color-shell-700);
     border: 2px solid var(--color-shell-950);
+    border-radius: var(--ui-radius);
   }
   ::-webkit-scrollbar-thumb:hover {
     background: var(--color-line-bright);
@@ -204,31 +336,32 @@
 
 @utility slab {
   background-color: color-mix(in oklab, var(--color-shell-900) 88%, transparent);
-  border: 2px solid var(--color-line);
-  backdrop-filter: blur(10px);
+  border: var(--ui-border) solid var(--color-line);
+  border-radius: var(--ui-radius);
+  backdrop-filter: blur(var(--ui-panel-blur));
 }
 
 @utility slab-solid {
   background-color: var(--color-shell-900);
-  border: 2px solid var(--color-line);
+  border: var(--ui-border) solid var(--color-line);
+  border-radius: var(--ui-radius);
+}
+
+html[data-style='hydraulic'] .slab {
+  background-color: color-mix(in oklab, var(--color-shell-900) 82%, rgb(20 175 196 / 0.08));
+}
+
+html[data-style='atlas'] .slab {
+  background-color: color-mix(in oklab, var(--color-shell-900) 94%, transparent);
+  backdrop-filter: blur(var(--ui-panel-blur));
 }
 
 @utility shadow-brut {
-  box-shadow: 4px 4px 0 0 rgb(2 8 15 / 0.75);
-}
-
-html.light .shadow-brut {
-  box-shadow: 4px 4px 0 0 rgb(7 21 34 / 0.12);
-}
-
-html.light .grid-paper {
-  background-image:
-    linear-gradient(to right, rgb(7 21 34 / 0.06) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(7 21 34 / 0.06) 1px, transparent 1px);
+  box-shadow: var(--ui-shadow);
 }
 
 @utility shadow-brut-sm {
-  box-shadow: 2px 2px 0 0 rgb(2 8 15 / 0.7);
+  box-shadow: var(--ui-shadow-sm);
 }
 
 /* Uppercase structural label, the workhorse of the console chrome. */
@@ -253,16 +386,37 @@ html.light .grid-paper {
 /* Blueprint grid used behind the twin and empty workspaces. */
 @utility grid-paper {
   background-image:
-    linear-gradient(to right, rgb(35 85 122 / 0.16) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(35 85 122 / 0.16) 1px, transparent 1px);
-  background-size: 48px 48px;
+    linear-gradient(to right, rgb(35 85 122 / var(--ui-grid-alpha)) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(35 85 122 / var(--ui-grid-alpha)) 1px, transparent 1px);
+  background-size: var(--ui-grid-size) var(--ui-grid-size);
 }
 
 @utility grid-paper-fine {
   background-image:
+    linear-gradient(to right, rgb(35 85 122 / var(--ui-grid-fine-alpha)) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(35 85 122 / var(--ui-grid-fine-alpha)) 1px, transparent 1px);
+  background-size: var(--ui-grid-fine) var(--ui-grid-fine);
+}
+
+html.light .grid-paper {
+  background-image:
+    linear-gradient(to right, rgb(7 21 34 / 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(7 21 34 / 0.06) 1px, transparent 1px);
+}
+
+html.light[data-style='atlas'] .grid-paper {
+  background-image:
+    linear-gradient(to right, rgb(7 21 34 / 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(7 21 34 / 0.07) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+html[data-style='hydraulic'] .grid-paper {
+  background-image:
+    radial-gradient(circle at 1px 1px, rgb(20 175 196 / 0.18) 1px, transparent 0),
     linear-gradient(to right, rgb(35 85 122 / 0.1) 1px, transparent 1px),
     linear-gradient(to bottom, rgb(35 85 122 / 0.1) 1px, transparent 1px);
-  background-size: 12px 12px;
+  background-size: 28px 28px, 56px 56px, 56px 56px;
 }
 
 /* Critical states get structure, not just a red tint. */
@@ -302,10 +456,11 @@ html.light .grid-paper {
     scrollbar-color: var(--color-shell-700) transparent;
   }
 
-  /* Focus ring that matches the hard-edged language. */
+  /* Focus ring that matches the active style language. */
   .focus-hard:focus-visible {
     outline: 2px solid var(--color-flow);
     outline-offset: 2px;
+    border-radius: var(--ui-radius);
   }
 }
 
@@ -341,6 +496,41 @@ html.light option {
 
 .chrome {
   color-scheme: dark;
+}
+
+/* Soft SaaS admin shell (inspired by modern Tailwind dashboards; console stays brutal). */
+/* Soft-look header chrome only — brutal admin keeps SCADA controls as-is */
+.admin-app[data-admin-look='soft'] {
+  color-scheme: light;
+}
+
+.admin-app header .border-2,
+.admin-app header .border {
+  border-radius: 0.75rem;
+  border-color: rgb(226 232 240);
+  background: #fff;
+  color: #475569;
+}
+
+.admin-app header .text-slate-100,
+.admin-app header .text-slate-300,
+.admin-app header .label-xs {
+  color: #64748b;
+}
+
+.admin-app header button:hover,
+.admin-app header label:hover {
+  border-color: rgb(103 232 249);
+}
+
+.admin-app header select {
+  color: #475569;
+  background: transparent;
+}
+
+.admin-app header select option {
+  color: #0f172a;
+  background: #fff;
 }
 
 @media (prefers-reduced-motion: reduce) {

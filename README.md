@@ -35,14 +35,20 @@ pnpm dev:api
 
 ### MQTT (optional LIVE stream)
 
-Off by default. Set `MQTT_ENABLED=true` in `.env` to connect to the broker.
+Off by default. Locally:
 
 ```bash
 docker compose -f infra/docker-compose.yml up -d
 pnpm --filter @aquasense/api sim:mqtt
 ```
 
-The core flips a facility to **LIVE** when MQTT packets arrive, and back to **SIMULATED** after 10s of silence.
+On Dokploy, Mosquitto and `mqtt-sim` are already in `docker-compose.yml`. Set:
+
+```env
+MQTT_ENABLED=true
+```
+
+Then redeploy/restart the `api` service. The console stream badge switches to **LIVE** when broker packets arrive (and back to **SIMULATED** after silence). Leave `MQTT_ENABLED=false` to keep the in-process simulator; the broker still runs ready for you.
 
 ## API
 
@@ -87,5 +93,76 @@ Socket.IO namespace `/live` — rooms `facility:{id}`. Events: `telemetry:batch`
 apps/web          Operator console
 apps/api          SCADA core
 packages/shared   Domain contracts
-infra/            Mosquitto compose
+infra/            Local Mosquitto compose
+docker-compose.yml  Production stack (Dokploy)
 ```
+
+## Deploy on Dokploy
+
+Use a **Compose** application (not a single Dockerfile app). The repo already has production images for `web`, `api`, and MySQL.
+
+### 1. DNS
+
+Point two hostnames at your Dokploy server IP, for example:
+
+- `app.example.com` → console
+- `api.example.com` → SCADA API / WebSocket
+
+### 2. Create the app
+
+1. Dokploy → **Create** → **Compose**
+2. Connect the Git repo
+3. Compose path: `./docker-compose.yml`
+4. Compose type: **docker-compose**
+
+### 3. Environment
+
+In the Compose **Environment** tab, set at least:
+
+```env
+MYSQL_PASSWORD=choose-a-strong-password
+MYSQL_ROOT_PASSWORD=choose-a-strong-password
+JWT_SECRET=choose-a-long-random-secret
+CORS_ORIGIN=https://app.example.com
+NEXT_PUBLIC_API_URL=https://api.example.com
+NEXT_PUBLIC_WS_URL=https://api.example.com
+```
+
+Optional:
+
+```env
+MQTT_ENABLED=false
+LLM_BASE_URL=
+LLM_API_KEY=
+LLM_MODEL=gpt-4o-mini
+```
+
+Mosquitto and a demo `mqtt-sim` publisher are always in the stack. Set `MQTT_ENABLED=true` and restart `api` to ingest LIVE telemetry from the broker. Leave it `false` to keep the in-process plant simulator.
+
+`NEXT_PUBLIC_*` are **build-time** args for the web image. If you change them later, trigger a **rebuild** (not only a restart).
+
+### 4. Domains
+
+In Dokploy Domains, attach:
+
+| Domain | Service |
+|--------|---------|
+| `app.example.com` | `web` |
+| `api.example.com` | `api` |
+
+Enable HTTPS (Let's Encrypt) on both. Socket.IO needs the API domain to support WebSockets (Dokploy/Traefik does this by default).
+
+### 5. Deploy
+
+Click **Deploy**. First build pulls Node images and compiles the monorepo — allow several minutes.
+
+Check:
+
+- `https://api.example.com/health`
+- `https://app.example.com/login` — seed admin `admin@aquasense.local` / `admin123`
+
+### Notes
+
+- Do **not** publish host ports; Dokploy Traefik routes by domain to services `web` and `api`.
+- MQTT: services `mosquitto` + `mqtt-sim` run automatically. Flip `MQTT_ENABLED=true` on `api` for LIVE mode.
+- Chat assistant works without an LLM; set `LLM_*` on `web` when your OpenAI-compatible API is ready.

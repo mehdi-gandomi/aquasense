@@ -1,21 +1,32 @@
-FROM node:22-alpine AS deps
+# AQUASENSE API — production image (pnpm monorepo)
+FROM node:22-alpine AS base
+RUN corepack enable && corepack prepare pnpm@11.13.1 --activate
 WORKDIR /repo
-RUN corepack enable
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
+
+FROM base AS build
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY apps/api/package.json apps/api/
 COPY packages/shared/package.json packages/shared/
-RUN pnpm install --frozen-lockfile || pnpm install
+RUN pnpm install --frozen-lockfile
 
-FROM deps AS build
-COPY . .
-RUN pnpm --filter @aquasense/shared build && pnpm --filter @aquasense/api build
+COPY packages/shared packages/shared
+COPY apps/api apps/api
 
-FROM node:22-alpine
+RUN pnpm --filter @aquasense/shared build \
+  && pnpm --filter @aquasense/api build \
+  && pnpm --filter @aquasense/api deploy --prod --legacy /out
+
+FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=build /repo/apps/api/dist ./dist
-COPY --from=build /repo/apps/api/package.json ./
-COPY --from=build /repo/packages/shared/dist /packages/shared/dist
-COPY --from=build /repo/packages/shared/package.json /packages/shared/
-COPY --from=build /repo/node_modules ./node_modules
+ENV API_PORT=3001
+RUN apk add --no-cache wget
+
+COPY --from=build /out ./
+COPY apps/api/scripts/mqtt-sim.cjs ./scripts/mqtt-sim.cjs
+
+EXPOSE 3001
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:3001/health || exit 1
+
 CMD ["node", "dist/main.js"]

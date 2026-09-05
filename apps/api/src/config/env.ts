@@ -12,7 +12,10 @@ function num(value: string | undefined, fallback: number): number {
 
 export const env = {
   apiPort: num(process.env.API_PORT, 3001),
-  corsOrigin: process.env.CORS_ORIGIN?.split(',') ?? ['http://localhost:3000'],
+  corsOrigin:
+    process.env.CORS_ORIGIN?.split(',')
+      .map((o) => o.trim())
+      .filter(Boolean) ?? ['http://localhost:3000'],
   simulationTickMs: num(process.env.SIMULATION_TICK_MS, 1000),
   telemetryBatchMs: num(process.env.TELEMETRY_BATCH_MS, 250),
   historyFlushMs: num(process.env.HISTORY_FLUSH_MS, 5000),

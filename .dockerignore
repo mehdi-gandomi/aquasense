@@ -1,0 +1,23 @@
+# Keep build context small for Dokploy / Docker Compose.
+.git
+.github
+.next
+**/.next
+**/dist
+**/node_modules
+**/.turbo
+**/coverage
+apps/web/.next
+apps/api/dist
+packages/shared/dist
+infra/mosquitto
+*.md
+!README.md
+.env
+.env.*
+!.env.example
+agent-transcripts
+terminals
+**/*.log
+**/Thumbs.db
+.DS_Store

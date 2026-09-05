@@ -13,12 +13,13 @@ import {
   type EquipmentMode,
 } from '@aquasense/shared';
 import { useAuth } from '@/stores/useAuth';
-import { getChannel, getValue, series } from '@/lib/channels';
+import { getChannel, getValue } from '@/lib/channels';
 import { nodeSeverity } from '@/lib/health';
 import { formatValue, relativeTime } from '@/lib/format';
 import { useConsole } from '@/stores/useConsole';
 import { sendAlertAction, sendEquipmentCommand } from '@/components/providers/TelemetryProvider';
-import { HardButton, RangeBar, SeverityDot, Sparkline, StatusChip } from '@/components/ui/primitives';
+import { HardButton, RangeBar, SeverityDot, StatusChip } from '@/components/ui/primitives';
+import { SensorTrendPanel } from '@/components/charts/SensorTrendPanel';
 
 function DeckSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -139,13 +140,13 @@ function EquipmentControl({ item }: { item: EquipmentDef }) {
 }
 
 function SensorDetail({ sensorId }: { sensorId: string }) {
+  const facilityId = useConsole((s) => s.facilityId);
   const sensor = getSensor(sensorId);
   if (!sensor) return null;
 
   const channel = getChannel(sensorId);
   const value = getValue(sensorId);
   const severity = channel?.severity ?? 'offline';
-  const points = series(sensorId, 90);
 
   return (
     <>
@@ -190,8 +191,12 @@ function SensorDetail({ sensorId }: { sensorId: string }) {
           </div>
         </div>
 
-        <div className="mt-3 border-2 border-line bg-shell-950/60 p-2">
-          <Sparkline points={points} color={SEVERITY_COLOR[severity]} width={272} height={54} />
+        <div className="mt-3">
+          <SensorTrendPanel
+            sensor={sensor}
+            facilityId={facilityId}
+            severity={severity}
+          />
         </div>
       </DeckSection>
 

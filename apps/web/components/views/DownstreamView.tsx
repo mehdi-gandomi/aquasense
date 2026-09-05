@@ -12,6 +12,7 @@ import { liveBloomAssessment } from '@/lib/bloom';
 import { formatValue } from '@/lib/format';
 import { useConsole } from '@/stores/useConsole';
 import { HardButton, RangeBar, Sparkline, StatusChip } from '@/components/ui/primitives';
+import { DriverBars } from '@/components/charts/Charts';
 import { ReservoirView } from '@/components/views/ReservoirView';
 import { WorkspaceHeader } from '@/components/views/WorkspaceHeader';
 
@@ -144,24 +145,9 @@ export function DownstreamView() {
             <div className="border-b-2 border-line bg-shell-850/70 px-3 py-2">
               <span className="label-xs text-slate-300">Risk drivers</span>
             </div>
-            <div className="flex flex-col gap-3 p-3">
-              {assessment.drivers.map((d) => (
-                <div key={d.label}>
-                  <div className="flex justify-between">
-                    <span className="text-[11px] uppercase tracking-[0.08em] text-slate-300">
-                      {d.label}
-                    </span>
-                    <span className="text-[11px] text-flow tnum">{d.contribution}%</span>
-                  </div>
-                  <div className="mt-1.5 h-1.5 bg-shell-800">
-                    <div
-                      className="h-full bg-flow"
-                      style={{ width: `${Math.min(100, d.contribution * 3.2)}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-              <div className="border-t-2 border-line pt-3">
+            <div className="p-2">
+              <DriverBars drivers={assessment.drivers} height={210} />
+              <div className="border-t-2 border-line px-1 pt-3">
                 <div className="label-xs mb-1">DBP formation risk</div>
                 <div className="text-[20px] font-semibold text-warning tnum">
                   {assessment.dbpRisk}

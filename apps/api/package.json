@@ -6,7 +6,7 @@
     "dev": "nest start --watch",
     "build": "nest build",
     "start": "node dist/main.js",
-    "sim:mqtt": "ts-node --transpile-only scripts/mqtt-sim.ts",
+    "sim:mqtt": "node scripts/mqtt-sim.cjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
   },

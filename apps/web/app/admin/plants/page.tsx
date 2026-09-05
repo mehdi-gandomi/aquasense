@@ -5,8 +5,15 @@ import Link from 'next/link';
 import { FormEvent, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/stores/useAuth';
-import { HardButton } from '@/components/ui/primitives';
-import { WorkspaceHeader } from '@/components/views/WorkspaceHeader';
+import {
+  AdminButton,
+  AdminCard,
+  AdminCardTitle,
+  AdminField,
+  AdminInput,
+  AdminPageHeader,
+  AdminSelect,
+} from '@/components/admin/AdminUi';
 
 const PlantMap = dynamic(
   () => import('@/components/admin/PlantMap').then((m) => m.PlantMap),
@@ -108,89 +115,88 @@ export default function PlantsPage() {
   };
 
   return (
-    <div className="p-4">
-      <WorkspaceHeader
-        title="Plant management"
-        subtitle="Click the map to pin a site. New sites clone the selected plant template."
+    <div>
+      <AdminPageHeader
+        title="Plants"
+        subtitle="Pin sites on the map. New plants clone the selected twin template."
       />
-      {error && <p className="mt-3 text-[12px] text-critical">{error}</p>}
+      {error && <p className="mb-4 text-[13px] text-rose-600">{error}</p>}
 
-      <div className="mt-3 grid gap-3 xl:grid-cols-[420px_1fr]">
-        <form onSubmit={(e) => void submit(e)} className="slab p-3 shadow-brut">
-          <div className="label-xs mb-3">{editingId ? 'Edit plant' : 'New plant'}</div>
-          <label className="mb-2 block">
-            <span className="label-xs">Client</span>
-            <select
-              value={form.clientId}
-              onChange={(e) => setForm((f) => ({ ...f, clientId: e.target.value }))}
-              className="mt-1 w-full border-2 border-line bg-shell-850 px-2 py-1.5 text-[12px]"
-            >
-              {clients.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="mb-2 block">
-            <span className="label-xs">Name</span>
-            <input
-              required
-              value={form.name}
-              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              className="mt-1 w-full border-2 border-line bg-shell-850 px-2 py-1.5 text-[12px] outline-none focus:border-flow"
-            />
-          </label>
-          <div className="mb-2 grid grid-cols-2 gap-2">
-            <label>
-              <span className="label-xs">Code</span>
-              <input
-                value={form.code}
-                onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
-                className="mt-1 w-full border-2 border-line bg-shell-850 px-2 py-1.5 text-[12px]"
-              />
-            </label>
-            <label>
-              <span className="label-xs">Template</span>
-              <select
-                value={form.kind}
-                onChange={(e) => setForm((f) => ({ ...f, kind: e.target.value }))}
-                className="mt-1 w-full border-2 border-line bg-shell-850 px-2 py-1.5 text-[12px]"
+      <div className="grid gap-4 xl:grid-cols-[420px_1fr]">
+        <AdminCard>
+          <AdminCardTitle>{editingId ? 'Edit plant' : 'New plant'}</AdminCardTitle>
+          <form onSubmit={(e) => void submit(e)}>
+            <AdminField label="Client">
+              <AdminSelect
+                value={form.clientId}
+                onChange={(e) => setForm((f) => ({ ...f, clientId: e.target.value }))}
               >
-                <option value="wrrf">WRRF twin</option>
-                <option value="pretreatment">Industrial</option>
-                <option value="reservoir">Reservoir</option>
-              </select>
-            </label>
-          </div>
-          <label className="mb-2 block">
-            <span className="label-xs">Address</span>
-            <input
-              value={form.address}
-              onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
-              className="mt-1 w-full border-2 border-line bg-shell-850 px-2 py-1.5 text-[12px]"
-            />
-          </label>
-          <div className="mb-2 label-xs tnum">
-            Pin {form.lat?.toFixed(4) ?? '—'}, {form.lng?.toFixed(4) ?? '—'}
-          </div>
-          <PlantMap
-            lat={form.lat}
-            lng={form.lng}
-            onPick={(lat, lng) => setForm((f) => ({ ...f, lat, lng }))}
-          />
-          <div className="mt-3 flex gap-2">
-            <HardButton type="submit" tone="flow">
-              {editingId ? 'Save plant' : 'Create plant'}
-            </HardButton>
-            {editingId && <HardButton onClick={() => reset()}>Cancel</HardButton>}
-          </div>
-        </form>
+                {clients.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </AdminSelect>
+            </AdminField>
+            <AdminField label="Name">
+              <AdminInput
+                required
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              />
+            </AdminField>
+            <div className="mb-2.5 grid grid-cols-2 gap-2">
+              <AdminField label="Code">
+                <AdminInput
+                  value={form.code}
+                  onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
+                />
+              </AdminField>
+              <AdminField label="Template">
+                <AdminSelect
+                  value={form.kind}
+                  onChange={(e) => setForm((f) => ({ ...f, kind: e.target.value }))}
+                >
+                  <option value="wrrf">WRRF twin</option>
+                  <option value="pretreatment">Industrial</option>
+                  <option value="reservoir">Reservoir</option>
+                </AdminSelect>
+              </AdminField>
+            </div>
+            <AdminField label="Address">
+              <AdminInput
+                value={form.address}
+                onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
+              />
+            </AdminField>
+            <div className="mb-2 text-[12px] text-slate-500">
+              Pin {form.lat?.toFixed(4) ?? '—'}, {form.lng?.toFixed(4) ?? '—'}
+            </div>
+            <div className="overflow-hidden rounded-xl border border-slate-200">
+              <PlantMap
+                lat={form.lat}
+                lng={form.lng}
+                onPick={(lat, lng) => setForm((f) => ({ ...f, lat, lng }))}
+              />
+            </div>
+            <div className="mt-3 flex gap-2">
+              <AdminButton type="submit" tone="primary">
+                {editingId ? 'Save plant' : 'Create plant'}
+              </AdminButton>
+              {editingId && <AdminButton onClick={() => reset()}>Cancel</AdminButton>}
+            </div>
+          </form>
+        </AdminCard>
 
-        <div className="slab shadow-brut">
-          <div className="border-b-2 border-line px-3 py-2 label-xs">Sites</div>
+        <AdminCard padded={false}>
+          <div className="border-b border-slate-100 px-4 py-3">
+            <AdminCardTitle>Sites</AdminCardTitle>
+          </div>
           {rows.map((row) => (
-            <div key={row.id} className="flex items-center gap-3 border-b border-line/50 px-3 py-2.5">
+            <div
+              key={row.id}
+              className="flex items-center gap-3 border-b border-slate-100 px-4 py-3 last:border-b-0"
+            >
               <button
                 type="button"
                 className="min-w-0 flex-1 text-left"
@@ -208,17 +214,17 @@ export default function PlantsPage() {
                   });
                 }}
               >
-                <div className="text-[12px] font-semibold uppercase tracking-[0.08em]">{row.shortName}</div>
-                <div className="label-xs mt-0.5 normal-case tracking-normal">
+                <div className="text-[13px] font-semibold text-slate-800">{row.shortName}</div>
+                <div className="mt-0.5 text-[12px] text-slate-500">
                   {row.code} · {row.kind} · {row.address || 'No address'}
                   {row.lat != null ? ` · ${row.lat.toFixed(3)}, ${row.lng?.toFixed(3)}` : ''}
                 </div>
               </button>
               <Link href={`/admin/plants/${row.id}`}>
-                <HardButton tone="flow">Dossier</HardButton>
+                <AdminButton tone="primary">Dossier</AdminButton>
               </Link>
-              <HardButton
-                tone="critical"
+              <AdminButton
+                tone="danger"
                 onClick={() =>
                   void api(`/admin/plants/${row.id}`, { method: 'DELETE' })
                     .then(() => {
@@ -229,10 +235,10 @@ export default function PlantsPage() {
                 }
               >
                 Remove
-              </HardButton>
+              </AdminButton>
             </div>
           ))}
-        </div>
+        </AdminCard>
       </div>
     </div>
   );

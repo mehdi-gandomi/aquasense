@@ -162,6 +162,10 @@ export function registerSensors(defs: SensorDef[]) {
   }
 }
 
+export function unregisterSensor(id: string) {
+  BY_ID.delete(id);
+}
+
 export function sensorsForFacility(facilityId: FacilityId): SensorDef[] {
   return [...BY_ID.values()].filter((s) => s.facilityId === facilityId);
 }
@@ -170,10 +174,16 @@ export function sensorsForNode(facilityId: FacilityId, nodeId: string): SensorDe
   return [...BY_ID.values()].filter((s) => s.facilityId === facilityId && s.nodeId === nodeId);
 }
 
+/** Seed catalogue instruments for a template facility (used when placing from catalogue). */
+export function catalogueSensors(templateFacilityId: FacilityId): SensorDef[] {
+  return SENSORS.filter((s) => s.facilityId === templateFacilityId);
+}
+
 export function cloneSensors(templateFacilityId: FacilityId, newFacilityId: FacilityId): SensorDef[] {
   return SENSORS.filter((s) => s.facilityId === templateFacilityId).map((s) => ({
     ...s,
     id: `${newFacilityId}__${s.id}`,
     facilityId: newFacilityId,
+    source: 'template' as const,
   }));
 }

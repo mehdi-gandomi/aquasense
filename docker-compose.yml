@@ -1,0 +1,113 @@
+# Production stack for Dokploy (Compose).
+# In Dokploy: Create → Compose → Git provider → Compose path: ./docker-compose.yml
+# Then assign domains to services `web` and `api`.
+#
+# Required env (Dokploy Environment tab):
+#   MYSQL_PASSWORD, JWT_SECRET
+#   CORS_ORIGIN=https://your-app-domain
+#   NEXT_PUBLIC_API_URL=https://your-api-domain
+#   NEXT_PUBLIC_WS_URL=https://your-api-domain
+#
+# MQTT (out of the box):
+#   `mosquitto` + `mqtt-sim` always run.
+#   Set MQTT_ENABLED=true and restart/redeploy `api` → LIVE broker telemetry.
+#   Leave MQTT_ENABLED=false → API uses the in-process simulator (broker still idle-ready).
+#
+# Rebuild web after changing NEXT_PUBLIC_* (they are baked at build time).
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-aquasense}
+      MYSQL_USER: ${MYSQL_USER:-aquasense}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?set MYSQL_PASSWORD in Dokploy env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-${MYSQL_PASSWORD}}
+    volumes:
+      - aquasense_mysql:/var/lib/mysql
+    healthcheck:
+      test: ['CMD-SHELL', 'mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD || exit 1']
+      interval: 8s
+      timeout: 5s
+      retries: 20
+      start_period: 25s
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    restart: unless-stopped
+    volumes:
+      - ./infra/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    expose:
+      - '1883'
+    healthcheck:
+      test: ['CMD', 'mosquitto_pub', '-h', '127.0.0.1', '-t', 'health/ping', '-m', 'ok']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  mqtt-sim:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+    environment:
+      MQTT_URL: ${MQTT_URL:-mqtt://mosquitto:1883}
+      MQTT_SIM_INTERVAL_MS: ${MQTT_SIM_INTERVAL_MS:-1000}
+    command: ['node', 'scripts/mqtt-sim.cjs']
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      mosquitto:
+        condition: service_healthy
+    environment:
+      API_PORT: 3001
+      CORS_ORIGIN: ${CORS_ORIGIN:?set CORS_ORIGIN to your web HTTPS origin}
+      SIMULATION_TICK_MS: ${SIMULATION_TICK_MS:-1000}
+      TELEMETRY_BATCH_MS: ${TELEMETRY_BATCH_MS:-250}
+      HISTORY_FLUSH_MS: ${HISTORY_FLUSH_MS:-5000}
+      MQTT_ENABLED: ${MQTT_ENABLED:-false}
+      MQTT_URL: ${MQTT_URL:-mqtt://mosquitto:1883}
+      MQTT_USERNAME: ${MQTT_BROKER_USERNAME:-}
+      MQTT_PASSWORD: ${MQTT_BROKER_PASSWORD:-}
+      MQTT_WATCHDOG_MS: ${MQTT_WATCHDOG_MS:-10000}
+      DB_ENABLED: ${DB_ENABLED:-true}
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: ${MYSQL_USER:-aquasense}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-aquasense}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
+      JWT_EXPIRES: ${JWT_EXPIRES:-7d}
+    expose:
+      - '3001'
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?set NEXT_PUBLIC_API_URL to your API HTTPS URL}
+        NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:?set NEXT_PUBLIC_WS_URL to your API HTTPS URL}
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      LLM_BASE_URL: ${LLM_BASE_URL:-}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-gpt-4o-mini}
+    expose:
+      - '3000'
+
+volumes:
+  aquasense_mysql:

@@ -167,7 +167,7 @@ export function OverviewConsole() {
         {flowDef && (
           <KpiSlab
             label={flowDef.label}
-            value={formatValue(flow, flowDef.decimals)}
+            value={formatValue(flow ?? Number.NaN, flowDef.decimals)}
             unit={flowDef.unit}
             note="Live 60s trend"
             accent="#4fd8ea"
