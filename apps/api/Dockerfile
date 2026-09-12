@@ -4,7 +4,7 @@ RUN corepack enable && corepack prepare pnpm@11.13.1 --activate
 WORKDIR /repo
 
 FROM base AS build
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json ./
 COPY apps/api/package.json apps/api/
 COPY packages/shared/package.json packages/shared/
 RUN pnpm install --frozen-lockfile
