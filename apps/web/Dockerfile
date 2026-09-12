@@ -24,7 +24,7 @@ RUN pnpm --filter @aquasense/shared build \
 FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=8000
 ENV HOSTNAME=0.0.0.0
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN apk add --no-cache wget
@@ -33,8 +33,8 @@ COPY --from=build /repo/apps/web/.next/standalone ./
 COPY --from=build /repo/apps/web/.next/static ./apps/web/.next/static
 COPY --from=build /repo/apps/web/public ./apps/web/public
 
-EXPOSE 3000
+EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
-  CMD wget -qO- http://127.0.0.1:3000/ || exit 1
+  CMD wget -qO- http://127.0.0.1:8000/ || exit 1
 
 CMD ["node", "apps/web/server.js"]
