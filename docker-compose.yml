@@ -107,7 +107,7 @@ services:
       LLM_API_KEY: ${LLM_API_KEY:-}
       LLM_MODEL: ${LLM_MODEL:-gpt-4o-mini}
     expose:
-      - '3000'
+      - '8000'
 
 volumes:
   aquasense_mysql:
